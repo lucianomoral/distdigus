@@ -13,7 +13,7 @@
 
 // Ejemplos de ruta
 
-Route::get('nombre', function(){
+Route::post('nombre', function(){
 
     return "Hola mundo";
 
