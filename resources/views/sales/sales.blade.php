@@ -17,7 +17,8 @@
     <a href="#" class="btn btn-default"><span class="glyphicon glyphicon-remove-sign"></span> Cerrar abiertos</a>
 </div>
 
+<br>
+
 @yield('subcontent')
 
 @endsection
-
