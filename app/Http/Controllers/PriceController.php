@@ -30,4 +30,19 @@ class PriceController extends Controller
 
     }
 
+    public function getItemPriceByMargin(Request $request)
+    {
+
+        $itemCost = ItemCost::where([
+                                        ['ITEMID', '=', $request->itemid]
+                                    ])->orderBy('COSTDATE', 'desc')->first();
+        
+        $itemPrice = $itemCost->COSTPRICE * (1 + ($request->margin / 100));
+
+        return response()->json([
+            "price" => $itemPrice
+        ]);
+
+    }
+
 }

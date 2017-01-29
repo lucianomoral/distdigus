@@ -25,6 +25,11 @@ class SalesController extends Controller
 
     }
 
+    public function salesClose()
+    {
+        return view('sales.salesClose');
+    }
+
     public function create(Request $request)
     {
         $invoice = new CustInvoiceHeader;
@@ -44,7 +49,7 @@ class SalesController extends Controller
 
     }
 
-    public function addLines($invoiceid, $invoicePerPackQty = 1)
+    public function addLines($invoiceid)
     {
         $invoice = CustInvoiceHeader::where('INVOICEID', $invoiceid)->first();
 
@@ -64,7 +69,6 @@ class SalesController extends Controller
                                             'listheader' => $listheader,
                                             'custinvoiceline' => $custinvoiceline,
                                             'total' => $total[0]->TOTAL,
-                                            'invoiceperpackqty' => $invoicePerPackQty
                                             ]
                     );
 
@@ -74,10 +78,12 @@ class SalesController extends Controller
     {
         $numOfLines;
         $linenum;
+        $lineSaved;
         $line = new CustInvoiceLine;
+        $invoiceid = $request->invoiceid;
 
         //Primero consulto el número de lineas que tenga la factura
-        $numOfLines = CustInvoiceLine::where("INVOICEID", $request->invoiceid)->count();
+        $numOfLines = CustInvoiceLine::where("INVOICEID", $invoiceid)->count();
 
         //Si no tienen ninguna linea, entonces la linea a ingresar será la número 1, sino busca la máxima y le suma 1
         if ($numOfLines == 0)
@@ -86,7 +92,7 @@ class SalesController extends Controller
         }
         else
         {
-            $linenum = CustInvoiceLine::where("INVOICEID", $request->invoiceid)->max('LINENUM') + 1;
+            $linenum = CustInvoiceLine::where("INVOICEID", $invoiceid)->max('LINENUM') + 1;
         }
 
         //Guardar la linea con los datos recibidos
@@ -98,8 +104,14 @@ class SalesController extends Controller
 
         $line->save();
 
+        $lineSaved = \DB::select("SELECT ITEMID, ITEMNAME, QTY, PRICE FROM CUSTINVOICEDETAILS WHERE INVOICEID = :id AND LINENUM = :linenum", ["id" => $invoiceid, "linenum" => $linenum]);
+
         return response()->json([
-            "invoiceid" => $line->INVOICEID
+            "linenum" => $linenum,
+            "itemid" => $lineSaved[0]->ITEMID,
+            "itemname" => $lineSaved[0]->ITEMNAME,
+            "qty" => $lineSaved[0]->QTY,
+            "price" => $lineSaved[0]->PRICE
         ]);
     }
 
@@ -107,11 +119,87 @@ class SalesController extends Controller
     {
         $invoiceid = $request->invoiceid;
         $linenum = $request->linenum;
+        $qtyOfLinesDeleted;
 
-        CustInvoiceLine::where([
-            ['INVOICEID', '=', $invoiceid],
-            ['LINENUM', '=', $linenum]
-        ])->delete();
+        $qtyOfLinesDeleted = CustInvoiceLine::where([
+                                ['INVOICEID', '=', $invoiceid],
+                                ['LINENUM', '=', $linenum]
+                            ])->delete();
+
+        return response()->json([
+            "qtyOfLinesDeleted" => $qtyOfLinesDeleted
+        ]);
+
+    }
+
+    public function updateInvoiceLine(Request $request)
+    {
+        $qtyOfLinesUpdated = 0;
+        $lineToUpdate;
+        $invoiceid = $request->invoiceid;
+        $linenum = $request->linenum;
+        $qty = $request->qty;
+        $price = $request->price;
+
+        $lineToUpdate = CustInvoiceLine::where([
+                                                ['INVOICEID', '=', $invoiceid],
+                                                ['LINENUM', '=', $linenum]
+                                                ])->get();
+
+        //Si los datos que vienen son igual a los actuales, entonces no se realiza ninguna actualización pero se aumenta el contador de lineas actualizadas para que no parezca que hubo error.
+        if ($lineToUpdate[0]->QTY == $qty && $lineToUpdate[0]->PRICE == $price)
+        {
+            $qtyOfLinesUpdated++;
+        }
+        //Si cantidad o precio es distinto, se produce la actualización
+        else
+        {
+            $qtyOfLinesUpdated = CustInvoiceLine::where([
+                                ['INVOICEID', '=', $invoiceid],
+                                ['LINENUM', '=', $linenum]
+                            ])->update([
+                                'QTY' => $qty,
+                                'PRICE' => $price
+                            ]);
+        }
+
+        return response()->json([
+            "qtyOfLinesUpdated" => $qtyOfLinesUpdated
+        ]);
+
+    }
+
+    public function closeInvoice(Request $request)
+    {
+        $qtyOfLines;
+        $qtyOfLinesUpdated;
+        $status;
+        $invoiceid = $request->invoiceid;
+
+        $qtyOfLines = CustInvoiceLine::where("INVOICEID", $invoiceid)->count();
+
+        if ($qtyOfLines > 0)
+        {
+            //Si tiene lineas, entonces se actualiza a status 1 (CERRADO)
+            $qtyOfLinesUpdated = CustInvoiceHeader::where("INVOICEID", $invoiceid)->update(["STATUS" => "1"]);
+            
+            if($qtyOfLinesUpdated > 0)
+            {
+                $status = true;
+            }
+            else
+            {
+                $status = false;
+            }
+        }
+        else
+        {
+            $status = false;
+        }
+
+        return response()->json([
+            "status" => $status
+        ]);
 
     }
 

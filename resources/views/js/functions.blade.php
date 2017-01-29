@@ -5,9 +5,28 @@ function showError(message)
     $("#validate-info").addClass("alert alert-danger").html(message);
 }
 
+function showWarning(message)
+{
+    $("#validate-info").addClass("alert alert-warning").html(message);
+}
+
 function hideError()
 {
     $("#validate-info").removeClass("alert alert-danger").html("");
+}
+
+function hideWarning()
+{
+    $("#validate-info").removeClass("alert alert-warning").html("");
+}
+
+function roundTwoDecimals(numberToRound)
+{
+    var roundedNumber = 0;
+    
+    roundedNumber = Math.round(numberToRound * 100) / 100
+
+    return roundedNumber;
 }
 
 function getProductById()
@@ -35,6 +54,7 @@ function getProductById()
                                         $("#itemnamerow").html("<input id='itemname' name='' class='sales-input-data' type='text' value='" + item.item.ITEMNAME + "'>");
                                         $("#PackageQty").val(item.item.PACKAGEQTY);
                                         loadItemNameEvent();
+                                        $("#qty, #price, #total").val("");
                                         $("#qty").focus();
 
                                     }
@@ -120,22 +140,78 @@ function clearLineData()
     $("#itemid").focus();
 }
 
-function redirToAddSalesLine(invoiceid)
+function calculateNewInvoiceTotal()
 {
-    var redir = "{{url('salesAddLines')}}";
-    redir += '/';
-    redir += invoiceid;
+    var newTotal = 0;
 
-    if ($("#packageqtyactive").is(":checked"))
-    {
-        redir += '/1'
-    }
-    else
-    {
-        redir += '/0'
-    }
+    $(".sales-line-total").each(function()
+        {
+            var totalVal = $(this).val();
+            
+            newTotal += parseFloat(totalVal.substring(2));
 
-    window.location = redir;
+        });
+
+    newTotal = roundTwoDecimals(newTotal);
+
+    $("#sales-total").text( "$ " + newTotal );
+
+}
+
+function loadChangeLinesEvent()
+{
+    $("tr input.sales-line-data").change(function()
+    {
+
+        $(this).parent().parent().addClass("danger hasChanged");
+
+        if ($(this).hasClass("sales-line-qty"))
+        {
+           //Si se modificó la cantidad, se cambia el valor del total de la linea por el de la nueva cantidad por el precio.
+
+           //Valor del total
+           $(this).parent().next().next().children().val( 
+
+               //Signo pesos
+               "$ "
+               +
+               //Se redondea a 2 decimales
+               roundTwoDecimals(
+                    //Valor de la nueva cantidad
+                    $(this).val() * 
+
+                    //Valor del precio
+                    $(this).parent().next().children().val()
+
+                )
+            );
+        }
+        else if ($(this).hasClass("sales-line-price"))
+        {
+            //Si se modificó el precio, se cambia el valor del total de la linea por el del nuevo precio por la cantidad.
+
+           //Valor del total
+           $(this).parent().next().children().val( 
+
+               //Signo pesos
+               "$ "
+               +
+               
+               //Se redondea a 2 decimales
+               roundTwoDecimals(
+                        //Valor de la cantidad
+                        $(this).parent().prev().children().val() * 
+
+                        //Valor del nuevo precio
+                        $(this).val()
+               )
+           );
+
+        }
+
+        calculateNewInvoiceTotal();
+
+    });
 }
 
 function saveInvoiceLine()
@@ -156,7 +232,19 @@ function saveInvoiceLine()
             },
         success:function(line)
         {
-            redirToAddSalesLine(line.invoiceid);
+            $("#total-line").before(
+                "<tr><td><input name='" + line.linenum + "' value = '" + line.linenum + "' class = 'checkbox sales-line-checkbox' type='checkbox'" +
+                "</td><td><input class = 'sales-line-data' type = 'number' readonly value='" + line.itemid + 
+                "'></td><td><input class = 'sales-line-data' type = 'text' readonly value='" + line.itemname + 
+                "'></td><td><input class = 'sales-line-data sales-line-qty' type = 'number' value='" + line.qty + 
+                "'></td><td><input class = 'sales-line-data sales-line-price' type = 'number' value='" + line.price + 
+                "'></td><td><input class = 'sales-line-data sales-line-total' type = 'text' readonly value='$ " + roundTwoDecimals(line.qty * line.price) + 
+                "'></td></tr>"
+            );
+
+            loadChangeLinesEvent();
+            calculateNewInvoiceTotal();
+
         },
         error:function(){showError("Error al ingresar la linea.")}
     });
@@ -165,14 +253,23 @@ function saveInvoiceLine()
 
 function getItemPriceByMargin(itemid, margin)
 {
-    alert (margin);
-    alert (itemid);
+    $.ajax({
+        url: "{{url('getItemPriceByMargin')}}",
+        data:{
+                itemid: itemid,
+                margin: margin
+            },
+        success:function(itemprice)
+                {
+                    $("#price").val(roundTwoDecimals(itemprice.price)).focus();
+                },
+        error: function(){showError("Error al buscar el precio.")}
+    });
+
 }
 
 function getItemPriceByListId(itemid, listid)
 {
-    //alert (itemid);
-    //alert (listid);
     $.ajax({
         url: "{{url('getItemPriceByListId')}}",
         data:{
@@ -209,15 +306,86 @@ function getItemPrice()
 }
 
 function deleteInvoiceLine(invoiceid, linenum)
-{
+{   
     $.ajax({
         url: "{{url('deleteInvoiceLine')}}",
         data:{
             invoiceid: invoiceid,
             linenum: linenum
         },
-        success:function(){},
-        error:function(){showError("No se pudo borrar la/s linea/s.")}
+        success:function(response)
+                {
+                    if (response.qtyOfLinesDeleted > 0)
+                    {
+                        $(".sales-line-checkbox:checked[name='" + linenum + "']").parent().parent().remove();
+                        calculateNewInvoiceTotal();
+                    }
+                    else
+                    {
+                        linesWithErrors.value += linenum + ", ";
+                        showError("Error al borrar la/s linea/s " + linesWithErrors.value.substring(0, linesWithErrors.value.length - 2))
+                    }
+                },
+        error:function()
+                {
+                    showError("No se pudo borrar la/s linea/s por un error inesperado.")
+                }
     });
 }
+
+function updateInvoiceLine(invoiceid, linenum, qty, price)
+{
+
+    $.ajax({
+        url: "{{url('updateInvoiceLine')}}",
+        data: {
+            invoiceid: invoiceid,
+            linenum: linenum,
+            qty: qty,
+            price: price
+        },
+        success: function(response)
+        {
+            if(response.qtyOfLinesUpdated > 0)
+            {
+                $("input[name='" + linenum + "']").parent().parent().removeClass('danger hasChanged');
+                if (linesWithErrors.value == ""){
+                    hideError();
+                }
+            }
+            else
+            {
+                linesWithErrors.value += linenum + ", ";
+                showError("Error al actualizar la/s linea/s " + linesWithErrors.value.substring(0, linesWithErrors.value.length - 2));
+            }
+        },
+        error: function(){showError("Error al actualizar la linea.")}
+
+    });
+
+}
+
+function closeInvoice(invoiceid)
+{
+    $.ajax({
+        url: "{{url('closeInvoice')}}",
+        data: {
+            invoiceid: invoiceid
+        },
+        success: function(response)
+        {
+            if (response.status == true)
+            {
+                hideError();
+                window.location = "{{url('salesClose')}}"
+            }
+            else
+            {
+                showError("No hay lineas en la factura para cerrar o ya se encuentra cerrada.")
+            }
+        },
+        error: function(){showError("No se pudo cerrar la factura por un error inesperado.")}
+    });
+}
+
 </script>

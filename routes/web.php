@@ -78,7 +78,7 @@ Route::get('list', 'ListController@index');
 
 Route::get('salesCreate', 'SalesController@create');
 
-Route::get('salesAddLines/{invoiceid}/{invoicePerPackQty?}', 'SalesController@addLines');
+Route::get('salesAddLines/{invoiceid}', 'SalesController@addLines');
 
 Route::get('getProductNameById','ItemController@getProductNameById');
 
@@ -86,6 +86,14 @@ Route::get('getProductNamesByName', 'ItemController@getProductNamesByName');
 
 Route::get('getItemPriceByListId', 'PriceController@getItemPriceByListId');
 
+Route::get('getItemPriceByMargin', 'PriceController@getItemPriceByMargin');
+
 Route::get('saveInvoiceLine', 'SalesController@saveInvoiceLine');
 
 Route::get('deleteInvoiceLine', 'SalesController@deleteInvoiceLine');
+
+Route::get('updateInvoiceLine', 'SalesController@updateInvoiceLine');
+
+Route::get('closeInvoice', 'SalesController@closeInvoice');
+
+Route::get('salesClose', 'SalesController@salesClose');
