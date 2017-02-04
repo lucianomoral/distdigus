@@ -1,3 +1,14 @@
+@php
+    session_start();
+    if (!isset($_SESSION['user']))
+    {
+        $redirect = url('/');
+
+        echo "<script type='text/javascript'>window.location ='" . $redirect . "'</script>";
+        die();
+    }            
+@endphp
+
 <html>
 <head>
 <title></title>
@@ -13,7 +24,7 @@
 
 </head>
 <body>
-    <h2 class="center">Bienvenido, {{ $user or "DIGUS" }}</h2>
+    <h2 class="center">Bienvenido, @php echo $_SESSION['user'] @endphp</h2>
     
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
@@ -27,8 +38,8 @@
                     
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#"><span class="glyphicon glyphicon-user"></span> {{ $user or "DIGUS"}}</a></li>
-                    <li><a href="#"><span class="glyphicon glyphicon-log-in"></span> Logout </a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-user"></span> @php echo $_SESSION['user'] @endphp</a></li>
+                    <li><a href="{{url('destroySession')}}" id="logout"><span class="glyphicon glyphicon-log-in"></span> Logout </a></li>
                 </ul>
         </div>
     </nav>

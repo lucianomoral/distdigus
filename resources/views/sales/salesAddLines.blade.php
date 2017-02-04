@@ -89,7 +89,7 @@
         </table>
     </div>
 
-@include('js.functions')
+@include('js.salesFunctions')
 
 <script>
 

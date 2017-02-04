@@ -6,7 +6,7 @@
 <body>
     <form action="comprobarLogin" method= 'POST'>
 
-        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+        <input id="token" type="hidden" name="_token" value="{{ csrf_token() }}">
         <label for="user">Usuario: </label><input type="text" name = 'user'><br><br>
         <input type="submit">
 

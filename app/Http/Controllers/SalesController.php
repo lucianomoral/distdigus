@@ -27,7 +27,32 @@ class SalesController extends Controller
 
     public function salesClose()
     {
-        return view('sales.salesClose');
+        $custinvoiceheader;
+        
+        //Tuve que usar el 'BINARY' porque sino me pinchaba la query desde PHP por distintos tipos de COLATION
+        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, CONCAT(DAY(MODIFIEDAT), '/', MONTH(MODIFIEDAT), '/', YEAR(MODIFIEDAT)) AS MODIFIEDAT, DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
+                                            FROM CUSTINVOICEDETAILS 
+                                            WHERE BINARY STATUS = BINARY 'CERRADA' 
+                                            GROUP BY INVOICEID, CUSTNAME, 3, DESCRIPTION
+                                            ORDER BY INVOICEID DESC"
+                                            );
+        
+        return view('sales.salesClose', ["custinvoiceheader" => $custinvoiceheader]);
+    }
+
+    public function salesOpen()
+    {
+        $custinvoiceheader;
+        
+        //Tuve que usar el 'BINARY' porque sino me pinchaba la query desde PHP por distintos tipos de COLATION
+        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, CONCAT(DAY(CREATEDAT), '/', MONTH(CREATEDAT), '/', YEAR(CREATEDAT)) AS CREATEDAT, DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
+                                            FROM CUSTINVOICEDETAILS
+                                            WHERE BINARY STATUS = BINARY 'ABIERTA' 
+                                            GROUP BY INVOICEID, CUSTNAME, 3, DESCRIPTION
+                                            ORDER BY INVOICEID DESC"
+                                            );
+        
+        return view('sales.salesOpen', ["custinvoiceheader" => $custinvoiceheader]);
     }
 
     public function create(Request $request)
@@ -186,6 +211,7 @@ class SalesController extends Controller
             if($qtyOfLinesUpdated > 0)
             {
                 $status = true;
+                \DB::select("UPDATE CUSTINVOICEHEADER SET MODIFIEDAT = NOW() WHERE INVOICEID = :id", ["id" => $invoiceid]);
             }
             else
             {
@@ -201,6 +227,11 @@ class SalesController extends Controller
             "status" => $status
         ]);
 
+    }
+
+    public function sendInvoiceByMail($invoiceid)
+    {
+        mail("lucianof.moral@gmail.com", "Prueba", "Prueba2");
     }
 
 }

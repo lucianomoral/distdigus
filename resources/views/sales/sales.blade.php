@@ -14,7 +14,7 @@
 <div class="btn-group btn-group-justified">
     <a href="{{url('salesNew')}}" class="btn btn-default"><span class="glyphicon glyphicon-plus-sign"></span> Nuevo</a>
     <a href="{{url('salesClose')}}" class="btn btn-default"><span class="glyphicon glyphicon-info-sign"></span> Consultar cerrados</a>
-    <a href="#" class="btn btn-default"><span class="glyphicon glyphicon-remove-sign"></span> Cerrar abiertos</a>
+    <a href="{{url('salesOpen')}}" class="btn btn-default"><span class="glyphicon glyphicon-remove-sign"></span> Consultar abiertos</a>
 </div>
 
 <br>

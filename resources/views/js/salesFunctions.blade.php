@@ -1,33 +1,6 @@
 <script>
 
-function showError(message)
-{
-    $("#validate-info").addClass("alert alert-danger").html(message);
-}
-
-function showWarning(message)
-{
-    $("#validate-info").addClass("alert alert-warning").html(message);
-}
-
-function hideError()
-{
-    $("#validate-info").removeClass("alert alert-danger").html("");
-}
-
-function hideWarning()
-{
-    $("#validate-info").removeClass("alert alert-warning").html("");
-}
-
-function roundTwoDecimals(numberToRound)
-{
-    var roundedNumber = 0;
-    
-    roundedNumber = Math.round(numberToRound * 100) / 100
-
-    return roundedNumber;
-}
+@include('js.commonFunctions')
 
 function getProductById()
 {
@@ -317,11 +290,13 @@ function deleteInvoiceLine(invoiceid, linenum)
                 {
                     if (response.qtyOfLinesDeleted > 0)
                     {
+                        //Si se borró la linea, se elimina esa fila de la tabla y se recalcula el total
                         $(".sales-line-checkbox:checked[name='" + linenum + "']").parent().parent().remove();
                         calculateNewInvoiceTotal();
                     }
                     else
                     {
+                        //Si no puede borrar ninguna linea, carga en un <input> typo "hidden" las lineas con errores para mostrarlas todas juntas si es más de una o una sola si es una sola
                         linesWithErrors.value += linenum + ", ";
                         showError("Error al borrar la/s linea/s " + linesWithErrors.value.substring(0, linesWithErrors.value.length - 2))
                     }
@@ -348,13 +323,16 @@ function updateInvoiceLine(invoiceid, linenum, qty, price)
         {
             if(response.qtyOfLinesUpdated > 0)
             {
+                //Si tiene éxito al actualizar, entonces limpia la clase de CSS que lo pone en color rojo.
                 $("input[name='" + linenum + "']").parent().parent().removeClass('danger hasChanged');
+                //Si hasta el momento no hay registrados errores, entonces esconde cualquier mensaje que hubiera aparecido.
                 if (linesWithErrors.value == ""){
                     hideError();
                 }
             }
             else
             {
+                //Si no puede actualizar, entonces carga en el <input> tipo "hidden" las lineas con error para mostrarlas.
                 linesWithErrors.value += linenum + ", ";
                 showError("Error al actualizar la/s linea/s " + linesWithErrors.value.substring(0, linesWithErrors.value.length - 2));
             }

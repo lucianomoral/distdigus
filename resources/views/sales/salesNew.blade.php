@@ -29,7 +29,7 @@
     <button class="btn btn-default" id = "CreateNewSales">Crear</button>
 </form>
 
-@include('js.functions')
+@include('js.salesFunctions')
 
 <script>
 

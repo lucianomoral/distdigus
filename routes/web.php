@@ -13,9 +13,9 @@ use App\Item;
 |
 */
 
-Route::get('/', function () {
+/*Route::get('/', function () {
     return view('welcome');
-});
+});*/
 
 Route::get('item', function(){
 
@@ -63,6 +63,12 @@ Route::post('cerrarSesion', function(){
 
 });
 
+Route::get('/', 'OriginController@login');
+
+Route::post('checkUserLogin', 'LoginController@checkUserLogin');
+
+Route::get('destroySession', 'LoginController@destroySession');
+
 Route::get('index', 'OriginController@index');
 
 Route::get('item', 'ItemController@index');
@@ -97,3 +103,9 @@ Route::get('updateInvoiceLine', 'SalesController@updateInvoiceLine');
 Route::get('closeInvoice', 'SalesController@closeInvoice');
 
 Route::get('salesClose', 'SalesController@salesClose');
+
+Route::get('salesOpen', 'SalesController@salesOpen');
+
+//Route::get('sendInvoiceByMail/{invoiceid}', 'SalesController@sendInvoiceByMail');
+
+Route::get('salesReportInvoice/{invoiceid}', 'ReportController@salesReportInvoice');
