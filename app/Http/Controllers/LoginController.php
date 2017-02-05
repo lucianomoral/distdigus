@@ -66,7 +66,7 @@ class LoginController extends Controller
 
         session_destroy();
 
-        return view("login.login");
+        return redirect(url('/'));
 
     }
 

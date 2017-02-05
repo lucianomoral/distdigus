@@ -355,7 +355,7 @@ function closeInvoice(invoiceid)
             if (response.status == true)
             {
                 hideError();
-                window.location = "{{url('salesClose')}}"
+                window.location = "{{url('salesClose')}}/" + invoiceid;
             }
             else
             {

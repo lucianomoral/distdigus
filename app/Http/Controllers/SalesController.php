@@ -25,19 +25,27 @@ class SalesController extends Controller
 
     }
 
-    public function salesClose()
+    public function salesClose($invoiceid = "")
     {
         $custinvoiceheader;
         
         //Tuve que usar el 'BINARY' porque sino me pinchaba la query desde PHP por distintos tipos de COLATION
-        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, CONCAT(DAY(MODIFIEDAT), '/', MONTH(MODIFIEDAT), '/', YEAR(MODIFIEDAT)) AS MODIFIEDAT, DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
-                                            FROM CUSTINVOICEDETAILS 
+        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, 
+                                            CONCAT(
+                                                RIGHT(CONCAT('00', DAY(MODIFIEDAT)), 2), 
+                                                '/', 
+                                                RIGHT(CONCAT('00', MONTH(MODIFIEDAT)), 2), 
+                                                '/', 
+                                                YEAR(MODIFIEDAT)
+                                            ) AS MODIFIEDAT,
+                                            DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
+                                            FROM CUSTINVOICEDETAILS
                                             WHERE BINARY STATUS = BINARY 'CERRADA' 
                                             GROUP BY INVOICEID, CUSTNAME, 3, DESCRIPTION
                                             ORDER BY INVOICEID DESC"
                                             );
         
-        return view('sales.salesClose', ["custinvoiceheader" => $custinvoiceheader]);
+        return view('sales.salesClose', ["custinvoiceheader" => $custinvoiceheader, "invoiceid" => $invoiceid]);
     }
 
     public function salesOpen()
@@ -45,9 +53,17 @@ class SalesController extends Controller
         $custinvoiceheader;
         
         //Tuve que usar el 'BINARY' porque sino me pinchaba la query desde PHP por distintos tipos de COLATION
-        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, CONCAT(DAY(CREATEDAT), '/', MONTH(CREATEDAT), '/', YEAR(CREATEDAT)) AS CREATEDAT, DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
+        $custinvoiceheader = \DB::select("  SELECT INVOICEID, CUSTNAME, 
+                                            CONCAT(
+                                                RIGHT(CONCAT('00', DAY(CREATEDAT)), 2), 
+                                                '/', 
+                                                RIGHT(CONCAT('00', MONTH(CREATEDAT)), 2), 
+                                                '/', 
+                                                YEAR(CREATEDAT)
+                                            ) AS CREATEDAT,
+                                            DESCRIPTION, COUNT(*) AS QTYOFLINES, SUM(TOTAL) AS TOTAL 
                                             FROM CUSTINVOICEDETAILS
-                                            WHERE BINARY STATUS = BINARY 'ABIERTA' 
+                                            WHERE BINARY STATUS = BINARY 'ABIERTA'
                                             GROUP BY INVOICEID, CUSTNAME, 3, DESCRIPTION
                                             ORDER BY INVOICEID DESC"
                                             );
@@ -229,9 +245,36 @@ class SalesController extends Controller
 
     }
 
+    public function deleteInvoice($invoiceid)
+    {
+        $headerDeleted;
+        $linesDeleted;
+
+        $linesDeleted = CustInvoiceLine::where('INVOICEID', $invoiceid)->delete();
+
+        $headerDeleted = CustInvoiceHeader::where('INVOICEID', $invoiceid)->delete();
+
+        if ($headerDeleted > 0)
+        {
+            return redirect(url('salesClose'));
+        }
+        else
+        {
+            echo "<script>showError('No se pudo eliminar la factura')</script>";
+        }
+    }
+
     public function sendInvoiceByMail($invoiceid)
     {
         mail("lucianof.moral@gmail.com", "Prueba", "Prueba2");
+    }
+
+    public function salesReOpen($invoiceid)
+    {
+        CustInvoiceHeader::where("INVOICEID", $invoiceid)->update(["STATUS" => "0"]);
+
+        return redirect(url('salesAddLines'). "/" . $invoiceid);
+
     }
 
 }

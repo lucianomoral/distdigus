@@ -102,10 +102,14 @@ Route::get('updateInvoiceLine', 'SalesController@updateInvoiceLine');
 
 Route::get('closeInvoice', 'SalesController@closeInvoice');
 
-Route::get('salesClose', 'SalesController@salesClose');
+Route::get('salesClose/{invoiceid?}', 'SalesController@salesClose');
 
 Route::get('salesOpen', 'SalesController@salesOpen');
 
 //Route::get('sendInvoiceByMail/{invoiceid}', 'SalesController@sendInvoiceByMail');
 
 Route::get('salesReportInvoice/{invoiceid}', 'ReportController@salesReportInvoice');
+
+Route::get('salesReOpen/{invoiceid}', 'SalesController@salesReOpen');
+
+Route::get('deleteInvoice/{invoiceid}', 'SalesController@deleteInvoice');
